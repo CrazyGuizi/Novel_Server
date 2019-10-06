@@ -1,0 +1,18 @@
+class Constant():
+    MONGO_DB = 'we_read'
+    MONGO_COLLECTION_NOVEL = 'novel'
+    MONGO_COLLECTION_NOVEL_TEMP = 'novel_temp'
+    MONGO_COLLECTION_USER = 'user'
+
+    XPATH_IMG = '//*[@id="main"]/div[1]/div[2]/div[1]/img'
+    XPATH_COVER = '@src'
+    XPATH_COVER_WIDTH = '@height'
+    XPATH_COVER_HEIGHT = '@width'
+    XPATH_TITLE = '@title'
+    XPATH_AUTHOR = '//*[@id="info"]/div[1]/span[1]/text()'
+    XPATH_DESCRIPTION = '/html/body/div[2]/div[1]/div[2]/div[2]/h3/text()[1]'
+    XPATH_CLASSIFY = '/html/body/div[2]/div[1]/div[1]/a[2]/text()'
+    XPATH_CHAPTERS = '/html/body/div[2]/div[3]/div[1]'
+    XPATH_CHAPTER_NAME = '//li/a/text()'
+    XPATH_CHAPTER_HREF = '//li/a/@href'
+    XPATH_CHAPTER_CONTENT = '/html/body/div[2]/div/div[2]/div/div[5]/text()'
