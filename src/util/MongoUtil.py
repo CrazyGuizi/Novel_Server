@@ -52,6 +52,42 @@ class MongoUtil(object):
             novel_ids.append(novel_id)
         return novel_ids
 
+    def novel_build_chapter_id(self):
+        chapter_id = 1
+        books = list(self.novel.find({'id': {'$in': [1000, 10001]}}, {"_id": 0, 'chapters.content': 0}))
+        for b in books:
+            for c in b['chapters']:
+                print(c)
+            # self.novel.update_one(
+            #     {'chapters.href': c['href']},
+            #     {'$set': {'chapters.id': chapter_id}}
+            # )
+            # chapter_id += 1
+
+    # 添加读者
+    def novel_add_reader(self, member_ids, book_id):
+        if isinstance(member_ids, list):
+            self.novel.update_one(
+                {'id': book_id},
+                {
+                    '$addToSet': {'readers': {'$each': member_ids}}
+                }
+            )
+        else:
+            self.novel.update_one(
+                {'id': book_id},
+                {
+                    '$addToSet': {'readers': member_ids}
+                }
+            )
+
+    # 获取小说的全部读者
+    def novel_get_readers(self, book_id):
+        return list(self.novel.find_one({"id": book_id}, {'_id': 0, 'readers': 1})['readers'])
+
+    def novel_get_content(self, book_id, chapter_id):
+        return self.novel.find_one({'id': book_id, 'chapters.id': chapter_id})
+
     def novel_insert_my(self, member_id, book_ids):
         if isinstance(book_ids, list):
             self.user.update_one(
@@ -60,6 +96,9 @@ class MongoUtil(object):
                     '$addToSet': {'books': {'$each': book_ids}}
                 }
             )
+            # 添加读者
+            for i in book_ids:
+                self.novel_add_reader(member_ids=member_id, book_id=i)
         else:
             self.user.update_one(
                 {'id': member_id},
@@ -67,9 +106,15 @@ class MongoUtil(object):
                     '$addToSet': {'books': book_ids}
                 }
             )
+            self.novel_add_reader(member_ids=member_id, book_id=book_ids)
 
+    # 查询小说的简单信息
     def novel_find_by_ids(self, ids):
         return self.novel.find({'id': {'$in': ids}}, {'_id': 0, 'chapters.content': 0})
+
+    # 查询小说的全部信息
+    def novel_find_by_id(self, book_id):
+        return self.novel.find_one({'id': book_id}, {"_id": 0})
 
     def novel_find_by_user(self, member_id, first):
         # 用户第一次使用
@@ -106,6 +151,9 @@ class MongoUtil(object):
         info['id'] = user_id
         info['nickname'] = '悦读{}号'.format(user_id)
         info['createTime'] = int(time.time() * 1000)
+        # 第一次使用
+        info['first'] = True
+
         try:
             self.user.insert_one(info)
         except Exception as e:
@@ -133,5 +181,6 @@ class MongoUtil(object):
 
 if __name__ == '__main__':
     mg = MongoUtil()
-    myBooks = mg.novel_find_by_user(1, False)
-    print(list(myBooks))
+    # myBooks = mg.novel_find_by_user(1, False)
+    # print(list(myBooks))
+    mg.novel_build_chapter_id()
