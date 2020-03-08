@@ -1,4 +1,6 @@
 from flask import Flask, request
+
+from src.novel import DBNovel
 from src.util import Checker
 from src.util import NetUtil
 from src.util import MongoUtil
@@ -8,9 +10,10 @@ app.debug = True
 checker = Checker.Checker()
 mgUtil = MongoUtil.MongoUtil()
 netUtil = NetUtil.NetUtil()
+dbNovel = DBNovel.DBNovel()
 
 
-@app.route('/test/', methods=['POST'])
+@app.route('/test/', methods=['POST', 'GET'])
 def test():
     json = request.json
     return netUtil.success(message='成功', data=json)
@@ -26,16 +29,45 @@ def novel_add_my():
         return netUtil.fail(message='添加失败')
 
 
-@app.route('/novel/my', methods=['POST'])
+@app.route('/novel/my', methods=['POST', 'GET'])
 def get_my_books():
-    json = request.json
-    if checker.check_member_id(json):
-        books = mgUtil.novel_find_by_user(json['member_id'],
-                                          json['first'] if checker.key_exit('first') else False)
-        if books:
-            return netUtil.success(data=books)
+    if request.method == 'POST':
+        member_id = request.json['member_id']
+        if checker.key_exit('first', request.json):
+            first = request.json['first']
         else:
-            return netUtil.success()
+            first = False
+    else:
+        member_id = request.args.get('member_id')
+        first = request.args.get('first') if (request.args.get('first') is not None) else False
+    books = mgUtil.novel_find_by_user(int(member_id), first)
+    if books:
+        return netUtil.success(data={'books': books})
+    else:
+        return netUtil.success()
+
+
+@app.route('/novel/detail', methods=['POST', 'GET'])
+def query_novel():
+    if request.method == 'POST':
+        id = request.json['id']
+    else:
+        id = request.args.get('id')
+    return netUtil.success(dbNovel.findNovel(id))
+
+
+@app.route('/novel/chapter', methods=['POST', 'GET'])
+def query_chapter():
+    if request.method == 'POST':
+        novelId = request.json['novel_id']
+        chapterId = request.json['chapter_id']
+    else:
+        novelId = request.args.get('novel_id')
+        chapterId = request.args.get('chapter_id')
+    chapter = dbNovel.findChapter(novelId, chapterId)
+    str = ''.join(chapter['chapters'][0]['content'])
+    chapter['chapters'][0]['content'] = str
+    return netUtil.success(chapter['chapters'][0]) if chapter is not None else netUtil.fail()
 
 
 # --------------------------------分割线-------------------------------- #
@@ -66,4 +98,7 @@ def user_login():
     else:
         return netUtil.fail(message='账号密码出错')
 
+
+if __name__ == '__main__':
+    app.run()
 # --------------------------------分割线-------------------------------- #
